@@ -5,3 +5,6 @@ dagon: main.c lex.yy.c
 
 lex.yy.c: lex.l
 	flex lex.l
+
+clean:
+	rm -rf dagon lex.yy.c
