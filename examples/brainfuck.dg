@@ -1,0 +1,45 @@
+BrainfuckInterpreter:
+
+  init(program):
+    @memory: [0] * 255
+    @m-ptr: 0
+    @i-ptr-stack: []
+    @i-ptr: 0
+    @program: program
+
+  run:
+    while @i-ptr < @program.length
+      case @program[@i-ptr]
+        ">"
+          @m-ptr: @m-ptr + 1
+          @i-ptr: @i-ptr + 1
+        "<"
+          @m-ptr: @m-ptr - 1
+          @i-ptr: @i-ptr + 1
+        "+"
+          @memory[@m-ptr]: @memory[@m-ptr] + 1
+          @i-ptr: @i-ptr + 1
+        "-"
+          @memory[@m-ptr]: @memory[@m-ptr] - 1
+          @i-ptr: @i-ptr + 1
+        "."
+          print(@memory[@m-ptr].chr)
+          @i-ptr: @i-ptr + 1
+        ","
+          @memory[@m-ptr]: STDIN.getc
+          @i-ptr: @i-ptr + 1
+        "["
+          @i-ptr-stack.push(@i-ptr + 1)
+          @i-ptr: @i-ptr + 1
+        "]"
+          if @memory[@m-ptr] = 0
+            @i-ptr-stack.pop
+            @i-ptr: @i-ptr + 1
+          else
+            @i-ptr: @i-ptr-stack.last
+        _
+          false
+
+program: "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
+
+BrainfuckInterpreter(program).run
