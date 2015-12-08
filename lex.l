@@ -2,7 +2,10 @@
   #include <stdio.h>
   #include <stdlib.h>
   #include <stdarg.h>
-  #define TOKEN(TYPE) printf("%s\n", #TYPE)
+  #define TOKEN(TYPE) printf("%s('%s')\n", #TYPE, yytext)
+
+  static int current_indent = 0;
+  static int line_indent = 0;
 
   void fatal_error(const char *fmt, ...) {
     va_list args;
@@ -27,8 +30,27 @@
 
 %option noyywrap
 
+%s start
+%x indent
+
 %%
 
+<indent>"\n" { line_indent = 0; }
+<indent>"  " {  line_indent++; }
+<indent>. {
+  unput(*yytext);
+  if (line_indent > current_indent) {
+    current_indent++;
+    printf("INDENT\n");
+  } else if (line_indent < current_indent) {
+    current_indent--;
+    printf("DEDENT\n");
+  } else {
+    BEGIN INITIAL;
+  }
+}
+
+"\n" { printf("\n"); line_indent = 0; BEGIN indent; }
 [0-9]+ { TOKEN(DIGIT); }
 ([A-Z][a-z]+)+ { TOKEN(CLASS); }
 [A-Z][A-Z]+ { TOKEN(CONSTANT); }
@@ -47,5 +69,6 @@
 " < " { TOKEN(LT); }
 " = " { TOKEN(EQUAL); }
 "_" { TOKEN(NOP); }
-[ \n\t]
+"  " { TOKEN(INDENT); }
+[ \n\t] { }
 . { check_token(yytext); fatal_error("Unknown token: %s\n", yytext); }
