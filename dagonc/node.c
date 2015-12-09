@@ -186,9 +186,6 @@ void dagon_dump_indented(Node* node, int indentation, int inlined) {
     case STRING_NODE:
       printf("\"%s\"", node->value.sval);
       break;
-    case DUMMY_NODE:
-      printf("(Needs to be implemented: %s)", node->value.sval);
-      break;
     default:
       fatal_error("Unknown node type: %i\n", node->type);
   }
@@ -209,10 +206,6 @@ void dagon_dump_list_node(ListNode* item, int indentation) {
     }
     item = item->next;
   }
-}
-
-Node* dagon_dummy_node_new(const char* name) {
-  NODE(DUMMY, name);
 }
 
 Node* dagon_list_node_new(Node* item) {

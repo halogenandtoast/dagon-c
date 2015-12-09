@@ -1,5 +1,4 @@
 typedef enum node_type {
-  DUMMY_NODE,
   OBJECT_INITIALIZE_NODE,
   STATEMENTS_NODE,
   INT_NODE,
@@ -129,4 +128,3 @@ Node* dagon_case_node_new(Node* value, Node* statements);
 Node* dagon_catchall_case_node_new(Node* statements);
 Node* dagon_string_node_new(const char *name);
 Node* dagon_object_initialize_node_new(const char *name, Node* args);
-Node* dagon_dummy_node_new(const char *name);

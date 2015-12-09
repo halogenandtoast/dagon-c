@@ -9,8 +9,6 @@
   void yyerror(const char *error) {
     fatal_error("Parsing error on line %d: %s\n", yylineno, error);
   }
-
-  #define DUMMY(name) dagon_dummy_node_new(name)
 %}
 
 %right ASSIGN ARRAY_ASSIGN
