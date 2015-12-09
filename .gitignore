@@ -1,4 +1,5 @@
 dagon
+dagonc
 lex.yy.c
 parse.output
 parse.tab.c
