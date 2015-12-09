@@ -1,9 +1,12 @@
 %{
   #include <stdio.h>
+  #include <stdarg.h>
+
   extern int yylex();
   extern int yylineno;
+  extern void fatal_error(const char *msg, ...);
   void yyerror(const char *error) {
-    fprintf(stderr, "Parsing error on line %d: %s", yylineno, error);
+    fatal_error("Parsing error on line %d: %s\n", yylineno, error);
   }
   #define YYDEBUG 1
   #define YYVERBOSE 1
