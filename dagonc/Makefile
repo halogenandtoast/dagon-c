@@ -1,7 +1,7 @@
 all: dagonc
 
-dagonc: main.c lex.yy.c parse.tab.c
-	cc -o $@ $^
+dagonc: main.c lex.yy.c parse.tab.c node.c
+	cc -ggdb -o $@ $^
 
 lex.yy.c: lex.l parse.tab.h
 	flex lex.l

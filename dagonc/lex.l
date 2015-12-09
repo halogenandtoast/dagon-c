@@ -2,6 +2,7 @@
   #include <stdio.h>
   #include <stdlib.h>
   #include <stdarg.h>
+  #include "node.h"
   #include "parse.tab.h"
 
   static int current_indent = 0;
@@ -59,11 +60,11 @@
 "if " { return IF; }
 "else" { return ELSE; }
 "\n"+ { line_indent = 0; BEGIN indent; return NEWLINE; }
-[0-9]+ { yylval = atoi(yytext); return DIGIT; }
-([A-Z][a-z]+)+ { return CLASS; }
-[A-Z][A-Z]+ { return CONSTANT; }
-[a-z]+([a-z-]+) { return ID; }
-\"[^"]*\" { return STRING; }
+[0-9]+ { yylval.ival = atoi(yytext); return DIGIT; }
+([A-Z][a-z]+)+ { yylval.sval = strdup(yytext); return CLASS; }
+[A-Z][A-Z]+ { yylval.sval = strdup(yytext); return CONSTANT; }
+[a-z]+([a-z-]+) { yylval.sval = strdup(yytext); return ID; }
+\"[^"]*\" { yylval.sval = strndup(yytext + 1, yyleng - 2); return STRING; }
 "." { return DOT; }
 ": " { return ASSIGN; }
 ":" { return COLON; }
