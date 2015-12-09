@@ -2,10 +2,11 @@
   #include <stdio.h>
   #include <stdlib.h>
   #include <stdarg.h>
-  #define TOKEN(TYPE) printf("%s('%s')\n", #TYPE, yytext)
+  #include "parse.tab.h"
 
   static int current_indent = 0;
   static int line_indent = 0;
+  static int override = 0;
 
   void fatal_error(const char *fmt, ...) {
     va_list args;
@@ -28,47 +29,55 @@
   }
 %}
 
-%option noyywrap
+%option noyywrap yylineno
 
 %s start
 %x indent
 
 %%
 
-<indent>"\n" { line_indent = 0; }
+<indent>"\n"+ { if(!override) line_indent = 0; override = 0; return NEWLINE; }
 <indent>"  " {  line_indent++; }
 <indent>. {
   unput(*yytext);
   if (line_indent > current_indent) {
     current_indent++;
-    printf("INDENT\n");
+    return INDENT;
   } else if (line_indent < current_indent) {
     current_indent--;
-    printf("DEDENT\n");
+    unput('\n');
+    override = 1;
+    return DEDENT;
   } else {
+    override = 0;
     BEGIN INITIAL;
   }
 }
 
-"\n" { printf("\n"); line_indent = 0; BEGIN indent; }
-[0-9]+ { TOKEN(DIGIT); }
-([A-Z][a-z]+)+ { TOKEN(CLASS); }
-[A-Z][A-Z]+ { TOKEN(CONSTANT); }
-[a-z]+([a-z-]+) { TOKEN(ID); }
-\"[^"]*\" { TOKEN(STRING); }
-"." { TOKEN(DOT); }
-":" { TOKEN(COLON); }
-"(" { TOKEN(LPAREN); }
-")" { TOKEN(RPAREN); }
-"[" { TOKEN(LBRACE); }
-"]" { TOKEN(RBRACE); }
-"@" { TOKEN(AT); }
-" + " { TOKEN(PLUS); }
-" * " { TOKEN(MULT); }
-" - " { TOKEN(MINUS); }
-" < " { TOKEN(LT); }
-" = " { TOKEN(EQUAL); }
-"_" { TOKEN(NOP); }
-"  " { TOKEN(INDENT); }
-[ \n\t] { }
-. { check_token(yytext); fatal_error("Unknown token: %s\n", yytext); }
+"while " { return WHILE; }
+"case " { return CASE; }
+"if " { return IF; }
+"else" { return ELSE; }
+"\n"+ { line_indent = 0; BEGIN indent; return NEWLINE; }
+[0-9]+ { yylval = atoi(yytext); return DIGIT; }
+([A-Z][a-z]+)+ { return CLASS; }
+[A-Z][A-Z]+ { return CONSTANT; }
+[a-z]+([a-z-]+) { return ID; }
+\"[^"]*\" { return STRING; }
+"." { return DOT; }
+": " { return ASSIGN; }
+":" { return COLON; }
+", " { return COMMA; }
+"(" { return LPAREN; }
+")" { return RPAREN; }
+"[" { return LBRACE; }
+"]: " { return ARRAY_ASSIGN; }
+"]" { return RBRACE; }
+"@" { return AT; }
+" + " { return PLUS; }
+" * " { return MULT; }
+" - " { return MINUS; }
+" < " { return LT; }
+" = " { return EQL; }
+"_" { return NOP; }
+. { check_token(yytext); fatal_error("Unknown token: '%s'\n", yytext); }
