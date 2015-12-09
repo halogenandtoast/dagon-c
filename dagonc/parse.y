@@ -8,8 +8,6 @@
   void yyerror(const char *error) {
     fatal_error("Parsing error on line %d: %s\n", yylineno, error);
   }
-  #define YYDEBUG 1
-  #define YYVERBOSE 1
 %}
 
 %right ASSIGN ARRAY_ASSIGN

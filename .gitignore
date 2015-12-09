@@ -1,5 +1,4 @@
-dagon
-dagonc
+src/dagonc
 lex.yy.c
 parse.output
 parse.tab.c
