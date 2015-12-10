@@ -1,0 +1,9 @@
+Greeter:
+  init(name):
+    @name: name
+
+  greet:
+    puts("Hello #{@name}!")
+
+greeter: Greeter("Nyarlathotep")
+greeter.greet
