@@ -20,7 +20,8 @@
   NODE(CATCHALL_CASE_NODE) \
   NODE(STRING_NODE) \
   NODE(ARRAY_NODE) \
-  NODE(NATIVE_NODE)
+  NODE(NATIVE_NODE) \
+  NODE(COMBINED_STRING_NODE)
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
@@ -116,10 +117,16 @@ typedef struct {
   ListNode* args;
 } ObjectInitializeNode;
 
+typedef struct CombinedStringNode {
+  Node* string;
+  struct CombinedStringNode* next_part;
+} CombinedStringNode;
+
 void dagon_dump(Node* node);
 void dagon_free_node(Node* node);
 
 void dagon_list_node_append(Node* list, Node* item);
+void dagon_combine_string_node_append(Node *combined_string, Node *string);
 Node* dagon_list_node_new(Node* item);
 Node* dagon_int_node_new(int val);
 Node* dagon_class_definition_node_new(const char *name, Node* method_definitions);
@@ -132,6 +139,7 @@ Node* dagon_array_node_new(Node* items);
 Node* dagon_while_statement_node_new(Node* condition, Node* statements);
 Node* dagon_case_statement_node_new(Node* value, Node* cases);
 Node* dagon_if_statement_node_new(Node* expression, Node* true_statements, Node* false_statements);
+Node* dagon_combine_string_node_new(Node* string);
 Node* dagon_bin_op_node_new(const char* op, Node* lhs, Node* rhs);
 Node* dagon_method_call_node_new(Node* object, const char *method, Node* args);
 Node* dagon_scoped_method_call_node_new(const char *method, Node* args);

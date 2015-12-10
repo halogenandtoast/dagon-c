@@ -1,6 +1,7 @@
 %{
   #include <stdio.h>
   #include <stdarg.h>
+  #include <string.h>
   #include "node.h"
   #include "env.h"
 
@@ -28,15 +29,17 @@
 %token DOT LPAREN RPAREN LBRACE
 %token RBRACE AT MULT MINUS LT EQL NOP COMMA ASSIGN
 %token WHILE CASE ARRAY_ASSIGN IF ELSE NEGATE
+%token DSTRING_BEGIN DSTRING_END
 %token<ival> DIGIT
-%token<sval> CLASS ID CONSTANT STRING
+%token<sval> CLASS ID CONSTANT STRING_PART
 
 %type<node> statements statement expression class_definition while_statement
 %type<node> case_statement if_statement array_assignment assignment
 %type<node> method_block method_definitions method_definition
 %type<node> block case_block cases case primary_value binary_operation
 %type<node> method_call scoped_method_call object_initialize arglist
-%type<node> value array array_list array_value variable number
+%type<node> value array array_list array_value variable number string
+%type<node> dstring combined_string
 
 %error-verbose
 %parse-param { DagonEnv* env }
@@ -118,7 +121,7 @@ value: number
      | variable
      | array
      | array_value
-     | STRING { $$ = dagon_string_node_new($1) }
+     | combined_string
      | CONSTANT { $$ = dagon_constant_node_new($1) }
 
 array: LBRACE array_list RBRACE { $$ = dagon_array_node_new($2) }
@@ -128,6 +131,18 @@ array_list: /* Empty List */ { $$ = dagon_list_node_new(NULL) }
           | expression { $$ = dagon_list_node_new($1) }
 
 array_value: primary_value LBRACE expression RBRACE { $$ = dagon_method_call_node_new($1, "[]", dagon_list_node_new($3)) }
+
+combined_string: combined_string dstring { dagon_combine_string_node_append($1, $2) }
+               | combined_string string { dagon_combine_string_node_append($1, $2) }
+               | string { $$ = dagon_combine_string_node_new($1) }
+               | dstring { $$ = dagon_combine_string_node_new($1) }
+
+string: STRING_PART { $$ = dagon_string_node_new($1) }
+
+dstring: DSTRING_BEGIN expression DSTRING_END
+       {
+        $$ = dagon_method_call_node_new($2, "to-s", dagon_list_node_new(NULL));
+       }
 
 variable: ID { $$ = dagon_variable_node_new($1) }
         | AT ID { $$ = dagon_instance_variable_node_new($2) }

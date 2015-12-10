@@ -206,6 +206,12 @@ void dagon_free_list_node(ListNode* node) {
 
 void dagon_free_node(Node* node) {
   switch(node->type) {
+    case COMBINED_STRING_NODE:
+      {
+        CombinedStringNode* current = (CombinedStringNode*) current;
+        /* TODO MAKE THIS WORK */
+        break;
+      }
     case OBJECT_INITIALIZE_NODE:
       {
         ObjectInitializeNode* object_initialize_node = (ObjectInitializeNode*) node->value.ptr;
@@ -485,4 +491,23 @@ Node* dagon_object_initialize_node_new(const char* name, Node* args) {
   object_initialize_node->name = name;
   object_initialize_node->args = LIST(args);
   NODE(OBJECT_INITIALIZE, object_initialize_node);
+}
+
+Node* dagon_combine_string_node_new(Node* string) {
+  CombinedStringNode* combined_string_node = malloc(sizeof(CombinedStringNode));
+  combined_string_node->string = string;
+  combined_string_node->next_part = NULL;
+  NODE(COMBINED_STRING, combined_string_node);
+}
+
+void dagon_combine_string_node_append(Node *node, Node *string) {
+  CombinedStringNode* combined_string_node = (CombinedStringNode*) node->value.ptr;
+  CombinedStringNode* last = combined_string_node;
+
+  while(last->next_part)
+    last = last->next_part;
+
+  last->next_part = malloc(sizeof(CombinedStringNode*));
+  last->next_part->string = string;
+  last->next_part->next_part = NULL;
 }

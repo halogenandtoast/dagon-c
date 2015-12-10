@@ -288,6 +288,28 @@ VALUE dagon_string_to_s(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return self;
 }
 
+VALUE dagon_string_plus(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  DagonString* lhs = (DagonString*) self;
+  DagonString* rhs = (DagonString*) values[0];
+
+  int length = strlen(lhs->internal) + strlen(rhs->internal) + 1;
+  char *new_string = malloc(sizeof(char) * length);
+  strcpy(new_string, lhs->internal);
+  strcat(new_string, rhs->internal);
+
+  return dagon_string_new(env, new_string);
+}
+
+VALUE dagon_string_chomp(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  DagonString* string = (DagonString*) self;
+  int len = strlen(string->internal) - 1;
+  char *new_string = malloc(sizeof(char) * len);
+  strncpy(new_string, string->internal, len);
+  new_string[len] = '\0';
+
+  return dagon_string_new(env, new_string);
+}
+
 VALUE dagon_io_get_c(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   DagonIO* io = (DagonIO*) self;
   FILE* file = io->file;
@@ -396,9 +418,11 @@ DagonEnv* dagon_env_new() {
   DagonClass* string = dagon_class_new("String", object);
   dagon_class_set(env, "String", string);
   dagon_class_add_c_method(env, string, "length", dagon_string_length);
+  dagon_class_add_c_method(env, string, "chomp", dagon_string_chomp);
   dagon_class_add_c_method(env, string, "[]", dagon_string_character_at);
   dagon_class_add_c_method(env, string, "=", dagon_string_compare);
   dagon_class_add_c_method(env, string, "to-s", dagon_string_to_s);
+  dagon_class_add_c_method(env, string, "+", dagon_string_plus);
 
   DagonClass* io = dagon_class_new("IO", object);
   dagon_class_set(env, "IO", io);
@@ -828,6 +852,22 @@ VALUE dagon_run(DagonEnv* env, Node* node) {
       {
         const char *name = dagon_variable_name(env, node);
         return dagon_const_get(env, name);
+      }
+    case COMBINED_STRING_NODE:
+      {
+        CombinedStringNode* combined_string = (CombinedStringNode*) node->value.ptr;
+        if(combined_string->next_part) {
+          VALUE string = dagon_run(env, combined_string->string);
+          CombinedStringNode* current = combined_string;
+          while(current->next_part) {
+            current = current->next_part;
+            VALUE next_part = dagon_run(env, current->string);
+            string = dagon_send(env, string, "+", 1, &next_part);
+          }
+          return string;
+        } else {
+          return dagon_run(env, combined_string->string);
+        }
       }
     default:
       fprintf(stderr, "Could not eval node type: %s\n", node_labels[node->type]);

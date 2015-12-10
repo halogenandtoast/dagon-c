@@ -34,8 +34,15 @@
 
 %s start
 %x indent
+%x string
+%s dstring
 
 %%
+
+<string>"#{" { BEGIN dstring; return DSTRING_BEGIN; }
+<string>([^"#]|\\.)* { yylval.sval = strdup(yytext); return STRING_PART; }
+<string>"\"" { BEGIN INITIAL; }
+<dstring>"}" { BEGIN string; return DSTRING_END; }
 
 <indent>"\n"+ { if(!override) line_indent = 0; override = 0; return NEWLINE; }
 <indent>"  " {  line_indent++; }
@@ -64,7 +71,7 @@
 ([A-Z][a-z]+)+ { yylval.sval = strdup(yytext); return CLASS; }
 [A-Z][A-Z]+ { yylval.sval = strdup(yytext); return CONSTANT; }
 [a-z]+[a-z-]* { yylval.sval = strdup(yytext); return ID; }
-\"[^"]*\" { yylval.sval = strndup(yytext + 1, yyleng - 2); return STRING; }
+"\"" { BEGIN string; }
 "." { return DOT; }
 ": " { return ASSIGN; }
 ":" { return COLON; }
