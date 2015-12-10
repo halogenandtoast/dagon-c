@@ -63,7 +63,7 @@
 [0-9]+ { yylval.ival = atoi(yytext); return DIGIT; }
 ([A-Z][a-z]+)+ { yylval.sval = strdup(yytext); return CLASS; }
 [A-Z][A-Z]+ { yylval.sval = strdup(yytext); return CONSTANT; }
-[a-z]+([a-z-]+) { yylval.sval = strdup(yytext); return ID; }
+[a-z]+[a-z-]* { yylval.sval = strdup(yytext); return ID; }
 \"[^"]*\" { yylval.sval = strndup(yytext + 1, yyleng - 2); return STRING; }
 "." { return DOT; }
 ": " { return ASSIGN; }
@@ -81,4 +81,5 @@
 " < " { return LT; }
 " = " { return EQL; }
 "_" { return NOP; }
+"-" { return NEGATE; }
 . { check_token(yytext); fatal_error("Unknown token: '%s'\n", yytext); }

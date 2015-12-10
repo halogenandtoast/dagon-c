@@ -27,7 +27,7 @@
 %token PLUS INDENT DEDENT COLON NEWLINE
 %token DOT LPAREN RPAREN LBRACE
 %token RBRACE AT MULT MINUS LT EQL NOP COMMA ASSIGN
-%token WHILE CASE ARRAY_ASSIGN IF ELSE
+%token WHILE CASE ARRAY_ASSIGN IF ELSE NEGATE
 %token<ival> DIGIT
 %token<sval> CLASS ID CONSTANT STRING
 
@@ -133,6 +133,7 @@ variable: ID { $$ = dagon_variable_node_new($1) }
         | AT ID { $$ = dagon_instance_variable_node_new($2) }
 
 number: DIGIT { $$ = dagon_int_node_new($1) }
+      | NEGATE DIGIT { $$ = dagon_int_node_new(-$2) }
 
 block: NEWLINE INDENT statements NEWLINE DEDENT { $$ = $3 }
 

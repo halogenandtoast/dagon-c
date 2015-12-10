@@ -108,6 +108,11 @@ VALUE dagon_object_print(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return dagon_send(env, dg_stdout, "print", 1, values);
 }
 
+VALUE dagon_object_puts(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  VALUE dg_stdout = dagon_const_get(env, "STDOUT");
+  return dagon_send(env, dg_stdout, "puts", 1, values);
+}
+
 VALUE dagon_array_get(DagonEnv *env, DagonArray* array, int index) {
   DagonListNode* item = array->head;
   for(int i = 0; i < index; i++) {
@@ -220,6 +225,9 @@ VALUE dagon_integer_to_s(DagonEnv *env, VALUE self, int argc, VALUE* values) {
     len++;
     tmp = tmp / 10;
   }
+  if(num < 0) {
+    len++;
+  }
   char *str = malloc(sizeof(char) * (len + 1));
   snprintf(str, len + 1, "%d", num);
   return dagon_string_new(env, str);
@@ -290,6 +298,13 @@ VALUE dagon_io_print(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return Dtrue;
 }
 
+VALUE dagon_io_puts(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  dagon_io_print(env, self, argc, values);
+  DagonIO* io = (DagonIO*) self;
+  fprintf(io->file, "\n");
+  return Dtrue;
+}
+
 void dagon_class_add_method(DagonEnv* env, DagonClass* klass, DagonMethod* method) {
   DagonMethodList* item = malloc(sizeof(DagonMethodList));
   item->method = method;
@@ -338,6 +353,7 @@ DagonEnv* dagon_env_new() {
   object->parent = NULL;
   dagon_class_set(env, "Object", object);
   dagon_class_add_c_method(env, object, "print", dagon_object_print);
+  dagon_class_add_c_method(env, object, "puts", dagon_object_puts);
 
   DagonObject* main_object = dagon_object_alloc(object);
   DagonScope* scope = dagon_scope_new(env);
@@ -375,6 +391,7 @@ DagonEnv* dagon_env_new() {
   dagon_class_set(env, "IO", io);
   dagon_class_add_c_method(env, io, "getc", dagon_io_get_c);
   dagon_class_add_c_method(env, io, "print", dagon_io_print);
+  dagon_class_add_c_method(env, io, "puts", dagon_io_puts);
 
   DagonIO* dg_stdin = malloc(sizeof(DagonIO));
   dg_stdin->header.klass = io;
@@ -480,6 +497,8 @@ void dagon_instance_variable_set(DagonEnv* env, DagonObject *object, const char 
 }
 
 int dagon_class_has_method(DagonEnv *env, DagonClass *klass, const char *method_name) {
+  if(!klass)
+    return 0;
   DagonMethod* method = NULL;
   DagonMethodList* current = klass->methods;
   while(current && strcmp(current->method->name, method_name) != 0)
