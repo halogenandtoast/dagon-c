@@ -4,6 +4,9 @@
 
 ## What is Dagon?
 
+## WARNING
+
+Some of the examples in this Readme have not yet been implemented in the language.
 
 ### Origins
 
