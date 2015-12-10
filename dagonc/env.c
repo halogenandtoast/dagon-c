@@ -113,6 +113,11 @@ VALUE dagon_object_puts(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return dagon_send(env, dg_stdout, "puts", 1, values);
 }
 
+VALUE dagon_object_gets(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  VALUE dg_stdin = dagon_const_get(env, "STDIN");
+  return dagon_send(env, dg_stdin, "gets", 0, NULL);
+}
+
 VALUE dagon_array_get(DagonEnv *env, DagonArray* array, int index) {
   DagonListNode* item = array->head;
   for(int i = 0; i < index; i++) {
@@ -305,6 +310,13 @@ VALUE dagon_io_puts(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return Dtrue;
 }
 
+VALUE dagon_io_gets(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  DagonIO* io = (DagonIO*) self;
+  char* in = malloc(sizeof(char) * 1024);
+  fgets(in, 1024, io->file);
+  return dagon_string_new(env, in);
+}
+
 void dagon_class_add_method(DagonEnv* env, DagonClass* klass, DagonMethod* method) {
   DagonMethodList* item = malloc(sizeof(DagonMethodList));
   item->method = method;
@@ -354,6 +366,7 @@ DagonEnv* dagon_env_new() {
   dagon_class_set(env, "Object", object);
   dagon_class_add_c_method(env, object, "print", dagon_object_print);
   dagon_class_add_c_method(env, object, "puts", dagon_object_puts);
+  dagon_class_add_c_method(env, object, "gets", dagon_object_gets);
 
   DagonObject* main_object = dagon_object_alloc(object);
   DagonScope* scope = dagon_scope_new(env);
@@ -392,6 +405,7 @@ DagonEnv* dagon_env_new() {
   dagon_class_add_c_method(env, io, "getc", dagon_io_get_c);
   dagon_class_add_c_method(env, io, "print", dagon_io_print);
   dagon_class_add_c_method(env, io, "puts", dagon_io_puts);
+  dagon_class_add_c_method(env, io, "gets", dagon_io_gets);
 
   DagonIO* dg_stdin = malloc(sizeof(DagonIO));
   dg_stdin->header.klass = io;
