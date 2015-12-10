@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 #include "env.h"
 #include "node.h"
 
@@ -7,11 +9,11 @@ static const char *node_labels[] = {
   FOREACH_NODE(GENERATE_STRING)
 };
 
-
 #define DEFAULT_STACK_SIZE 1000
 
-VALUE dagon_send(DagonEnv *env, VALUE value, const char *method_name, ListNode* args);
+VALUE dagon_send(DagonEnv *env, VALUE value, const char *method_name, int argc, VALUE* values);
 VALUE dagon_string_new(DagonEnv* env, const char *internal);
+VALUE dagon_const_get(DagonEnv *env, const char *const_name);
 
 DagonScope* dagon_current_scope(DagonEnv* env) {
   return env->stack->scopes[env->stack->sp - 1];
@@ -20,7 +22,6 @@ DagonScope* dagon_current_scope(DagonEnv* env) {
 DagonObject* dagon_current_object(DagonEnv* env) {
   return (DagonObject*) dagon_current_scope(env)->current;
 }
-
 
 DagonList* dagon_list_new() {
   DagonList* list = malloc(sizeof(DagonList));
@@ -63,6 +64,9 @@ void dagon_list_append(DagonList* list, const char* name, VALUE value) {
   }
 }
 
+void dagon_const_set(DagonEnv* env, const char* name, DagonObject* constant) {
+  dagon_list_append(env->constants, name, (VALUE) constant);
+}
 
 DagonScope* dagon_scope_new(DagonEnv* env) {
   DagonScope* current = dagon_current_scope(env);
@@ -100,10 +104,8 @@ DagonObject* dagon_object_alloc(DagonClass* klass) {
 }
 
 VALUE dagon_object_print(DagonEnv *env, VALUE self, int argc, VALUE* values) {
-  VALUE value = values[0];
-  DagonString* string = (DagonString*) dagon_send(env, value, "to-s", NULL);
-  printf("%s", string->internal);
-  return Dtrue;
+  VALUE dg_stdout = dagon_const_get(env, "STDOUT");
+  return dagon_send(env, dg_stdout, "print", 1, values);
 }
 
 VALUE dagon_array_get(DagonEnv *env, DagonArray* array, int index) {
@@ -123,7 +125,7 @@ VALUE dagon_array_new(DagonEnv* env) {
 
 VALUE dagon_array_mult(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   DagonArray* array = (DagonArray*) self;
-  int times = values[0] >> 1;
+  int times = FIX2INT(values[0]);
   int length = array->len;
   int new_length = times * length;
 
@@ -146,7 +148,7 @@ VALUE dagon_array_mult(DagonEnv *env, VALUE self, int argc, VALUE* values) {
 
 VALUE dagon_array_assign(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   DagonArray *array = (DagonArray*) self;
-  int index = (values[0] >> 1);
+  int index = FIX2INT(values[0]);
   VALUE value = values[1];
   DagonListNode* item = array->head;
   for(int i = 0; i < index; i++) {
@@ -158,7 +160,7 @@ VALUE dagon_array_assign(DagonEnv *env, VALUE self, int argc, VALUE* values) {
 
 VALUE dagon_array_ref(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   DagonArray *array = (DagonArray*) self;
-  int index = (values[0] >> 1);
+  int index = FIX2INT(values[0]);
   return dagon_array_get(env, array, index);
 }
 
@@ -178,7 +180,7 @@ VALUE dagon_array_push(DagonEnv *env, VALUE self, int argc, VALUE* values) {
     array->head->value = values[0];
   } else {
     DagonListNode* item = array->head;
-    for(int i = 0; i < length; i++) {
+    for(int i = 0; i < length - 1; i++) {
       item = item->next;
     }
 
@@ -198,20 +200,20 @@ VALUE dagon_array_pop(DagonEnv *env, VALUE self, int argc, VALUE* values) {
 }
 
 VALUE dagon_integer_lt(DagonEnv *env, VALUE self, int argc, VALUE* values) {
-  int left = ((int) self) >> 1;
-  int right = ((int) values[0]) >> 1; // TODO: CHECK IS INT
+  int left = FIX2INT(self);
+  int right = FIX2INT(values[0]); // TODO: CHECK IS INT
   return left < right ? Dtrue : Dfalse;
 }
 
 VALUE dagon_integer_chr(DagonEnv *env, VALUE self, int argc, VALUE* values) {
-  int num = ((int) self) >> 1;
+  int num = FIX2INT(self);
   char *str = malloc(sizeof(char) * 2);
   snprintf(str, 2, "%c", num);
   return dagon_string_new(env, str);
 }
 
 VALUE dagon_integer_to_s(DagonEnv *env, VALUE self, int argc, VALUE* values) {
-  int num = ((int) self) >> 1;
+  int num = FIX2INT(self);
   int len = 1;
   int tmp = num;
   while(tmp >= 10) {
@@ -224,27 +226,27 @@ VALUE dagon_integer_to_s(DagonEnv *env, VALUE self, int argc, VALUE* values) {
 }
 
 VALUE dagon_integer_eq(DagonEnv *env, VALUE self, int argc, VALUE* values) {
-  int left = ((int) self) >> 1;
-  int right = ((int) values[0]) >> 1; // TODO: CHECK IS INT
+  int left = FIX2INT(self);
+  int right = FIX2INT(values[0]); // TODO: CHECK IS INT
   return left == right ? Dtrue : Dfalse;
 }
 
 VALUE dagon_integer_plus(DagonEnv *env, VALUE self, int argc, VALUE* values) {
-  int left = ((int) self) >> 1;
-  int right = ((int) values[0]) >> 1; // TODO: CHECK IS INT
-  return ((left + right) << 1) + 1;
+  int left = FIX2INT(self);
+  int right = FIX2INT(values[0]); // TODO: CHECK IS INT
+  return INT2FIX(left + right);
 }
 
 VALUE dagon_integer_minus(DagonEnv *env, VALUE self, int argc, VALUE* values) {
-  int left = ((int) self) >> 1;
-  int right = ((int) values[0]) >> 1; // TODO: CHECK IS INT
-  return ((left - right) << 1) + 1;
+  int left = FIX2INT(self);
+  int right = FIX2INT(values[0]); // TODO: CHECK IS INT
+  return INT2FIX(left - right);
 }
 
 VALUE dagon_string_length(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   DagonString* string = (DagonString*) self;
   int length = strlen(string->internal);
-  return (VALUE) ((length << 1) + 1);
+  return INT2FIX(length);
 }
 
 VALUE dagon_string_new(DagonEnv* env, const char *internal) {
@@ -256,7 +258,7 @@ VALUE dagon_string_new(DagonEnv* env, const char *internal) {
 
 VALUE dagon_string_character_at(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   DagonString* string = (DagonString*) self;
-  int index = values[0] >> 1;
+  int index = FIX2INT(values[0]);
   char c = string->internal[index];
   char str[2] = "\0";
   str[0] = c;
@@ -271,6 +273,21 @@ VALUE dagon_string_compare(DagonEnv *env, VALUE self, int argc, VALUE* values) {
 
 VALUE dagon_string_to_s(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return self;
+}
+
+VALUE dagon_io_get_c(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  DagonIO* io = (DagonIO*) self;
+  FILE* file = io->file;
+  int chr = fgetc(file);
+  return INT2FIX(chr);
+}
+
+VALUE dagon_io_print(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  DagonIO* io = (DagonIO*) self;
+  DagonString* string = (DagonString*) dagon_send(env, values[0], "to-s", 0, NULL);
+  fprintf(io->file, "%s", string->internal);
+  fflush(io->file);
+  return Dtrue;
 }
 
 void dagon_class_add_method(DagonEnv* env, DagonClass* klass, DagonMethod* method) {
@@ -353,6 +370,21 @@ DagonEnv* dagon_env_new() {
   dagon_class_add_c_method(env, string, "[]", dagon_string_character_at);
   dagon_class_add_c_method(env, string, "=", dagon_string_compare);
   dagon_class_add_c_method(env, string, "to-s", dagon_string_to_s);
+
+  DagonClass* io = dagon_class_new("IO", object);
+  dagon_class_set(env, "IO", io);
+  dagon_class_add_c_method(env, io, "getc", dagon_io_get_c);
+  dagon_class_add_c_method(env, io, "print", dagon_io_print);
+
+  DagonIO* dg_stdin = malloc(sizeof(DagonIO));
+  dg_stdin->header.klass = io;
+  dg_stdin->file = fdopen(fcntl(STDIN_FILENO,  F_DUPFD, 0), "r");
+  dagon_const_set(env, "STDIN", (DagonObject*) dg_stdin);
+
+  DagonIO* dg_stdout = malloc(sizeof(DagonIO));
+  dg_stdout->header.klass = io;
+  dg_stdout->file = fdopen(fcntl(STDOUT_FILENO, F_DUPFD, 0), "w");
+  dagon_const_set(env, "STDOUT", (DagonObject*) dg_stdout);
 
   return env;
 }
@@ -481,6 +513,10 @@ DagonClass* dagon_class_lookup(DagonEnv *env, const char *class_name) {
   return (DagonClass*) dagon_list_lookup(env, env->classes, class_name, 1);
 }
 
+VALUE dagon_const_get(DagonEnv *env, const char *const_name) {
+  return (VALUE) dagon_list_lookup(env, env->constants, const_name, 1);
+}
+
 VALUE dagon_run_list(DagonEnv *env, ListNode* statement) {
   VALUE return_value;
   while(statement && statement->current) {
@@ -509,7 +545,7 @@ int dagon_list_node_length(ListNode* node) {
 
 VALUE* dagon_list_node_to_values(DagonEnv* env, ListNode* node) {
   int length = dagon_list_node_length(node);
-  VALUE* values = malloc(sizeof(VALUE) * length);
+  VALUE* values = calloc(length, sizeof(VALUE));
   int value_ptr = 0;
   VALUE* current_value = values;
   while(node && node->current) {
@@ -533,6 +569,11 @@ const char* dagon_variable_name(DagonEnv* env, Node* node) {
         VariableNode* variable_node = (VariableNode*) node->value.ptr;
         return variable_node->name;
       }
+    case CONSTANT_NODE:
+      {
+        ConstantNode* constant_node = (ConstantNode*) node->value.ptr;
+        return constant_node->name;
+      }
     default:
       dagon_error(env, "By the beard of zeus how did you get here?!");
   }
@@ -541,7 +582,7 @@ const char* dagon_variable_name(DagonEnv* env, Node* node) {
 }
 
 
-VALUE dagon_send(DagonEnv *env, VALUE value, const char *method_name, ListNode* args) {
+VALUE dagon_send(DagonEnv *env, VALUE value, const char *method_name, int argc, VALUE* args) {
   VALUE return_value;
   DagonObject* object = (DagonObject*) value;
   DagonClass* klass = dagon_class_for(env, object);
@@ -551,19 +592,18 @@ VALUE dagon_send(DagonEnv *env, VALUE value, const char *method_name, ListNode* 
 
   if(method->type == DAGON_METHOD) {
     ListNode* params = method->args;
+    int i = 0;
     while(params && params->current) {
       const char* varname = dagon_variable_name(env, params->current);
-      VALUE value = dagon_run(env, args->current);
-      dagon_list_append(scope->locals, varname, value);
+      dagon_list_append(scope->locals, varname, args[i]);
       params = params->next;
-      args = args->next;
     }
     ListNode* statement = method->statements;
     dagon_stack_push(env, scope);
     return_value = dagon_run_list(env, method->statements);
     dagon_stack_pop(env);
   } else {
-    return_value = method->c_func(env, (VALUE) object, dagon_list_node_length(args), dagon_list_node_to_values(env, args));
+    return_value = method->c_func(env, (VALUE) object, argc, args);
   }
 
   return return_value;
@@ -571,7 +611,7 @@ VALUE dagon_send(DagonEnv *env, VALUE value, const char *method_name, ListNode* 
 
 VALUE dagon_scoped_method_call(DagonEnv* env, const char* name) {
   DagonObject* object = dagon_current_object(env);
-  return dagon_send(env, (VALUE) object, name, NULL);
+  return dagon_send(env, (VALUE) object, name, 0, NULL);
 }
 
 void dagon_error(DagonEnv* env, const char* error, ...) {
@@ -670,14 +710,14 @@ VALUE dagon_run(DagonEnv* env, Node* node) {
     case INT_NODE:
       {
         int value = node->value.ival;
-        return_value = (VALUE) ((value << 1) + 1);
+        return_value = INT2FIX(value);
         break;
       }
     case METHOD_CALL_NODE:
       {
         MethodCallNode* method_call_node = (MethodCallNode*) node->value.ptr;
         VALUE object = dagon_run(env, method_call_node->object);
-        return_value = dagon_send(env, object, method_call_node->method, method_call_node->args);
+        return_value = dagon_send(env, object, method_call_node->method, dagon_list_node_length(method_call_node->args), dagon_list_node_to_values(env, method_call_node->args));
         break;
       }
     case OBJECT_INITIALIZE_NODE:
@@ -685,7 +725,7 @@ VALUE dagon_run(DagonEnv* env, Node* node) {
         ObjectInitializeNode* object_initialization_node = (ObjectInitializeNode*) node->value.ptr;
         DagonClass* klass = dagon_class_lookup(env, object_initialization_node->name);
         DagonObject* object = dagon_object_alloc(klass);
-        dagon_send(env, (VALUE) object, "init", object_initialization_node->args);
+        dagon_send(env, (VALUE) object, "init", dagon_list_node_length(object_initialization_node->args), dagon_list_node_to_values(env, object_initialization_node->args));
         return_value = (VALUE) object;
         break;
       }
@@ -699,10 +739,8 @@ VALUE dagon_run(DagonEnv* env, Node* node) {
             case CASE_NODE:
               {
                 CaseNode* case_node = (CaseNode*) cases->current->value.ptr;
-                ListNode* args = malloc(sizeof(ListNode));
-                args->current = case_node->value;
-                args->next = NULL;
-                if(dagon_send(env, value, "=", args) == Dtrue) {
+                VALUE rhs = dagon_run(env, case_node->value);
+                if(dagon_send(env, value, "=", 1, &rhs) == Dtrue) {
                   return dagon_run_list(env, case_node->statements);
                 }
                 break;
@@ -750,11 +788,16 @@ VALUE dagon_run(DagonEnv* env, Node* node) {
       {
         ScopedMethodCallNode* scoped_method_call_node = (ScopedMethodCallNode*) node->value.ptr;
         VALUE object = (VALUE) dagon_current_object(env);
-        return_value = dagon_send(env, object, scoped_method_call_node->method, scoped_method_call_node->args);
+        return_value = dagon_send(env, object, scoped_method_call_node->method, dagon_list_node_length(scoped_method_call_node->args), dagon_list_node_to_values(env, scoped_method_call_node->args));
         break;
       }
+    case CONSTANT_NODE:
+      {
+        const char *name = dagon_variable_name(env, node);
+        return dagon_const_get(env, name);
+      }
     default:
-      fprintf(stderr, "Could not eval node type: %d\n", node->type);
+      fprintf(stderr, "Could not eval node type: %s\n", node_labels[node->type]);
       exit(1);
   }
 

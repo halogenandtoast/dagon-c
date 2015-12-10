@@ -10,6 +10,9 @@
 #define Dtrue 2
 
 typedef uintptr_t VALUE;
+#define SIGNED_VALUE intptr_t
+#define FIX2INT(x) (((SIGNED_VALUE)(x)) >> 1)
+#define INT2FIX(x) ((VALUE)(((x) << 1) + 1))
 
 typedef struct {
   VALUE value;
@@ -82,6 +85,11 @@ typedef struct {
   DagonObjectHeader header;
   const char* internal;
 } DagonString;
+
+typedef struct {
+  DagonObjectHeader header;
+  FILE* file;
+} DagonIO;
 
 typedef struct {
   DagonObjectHeader header;
