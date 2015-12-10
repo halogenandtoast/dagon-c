@@ -1,6 +1,6 @@
 all: dagonc
 
-dagonc: main.c lex.yy.c parse.tab.c node.c
+dagonc: main.c lex.yy.c parse.tab.c node.c env.c
 	cc -ggdb -o $@ $^
 
 lex.yy.c: lex.l parse.tab.h
@@ -10,4 +10,4 @@ parse.tab.c parse.tab.h: parse.y
 	bison -d parse.y
 
 clean:
-	rm -rf dagonc lex.yy.c parse.output parse.tab.c parse.tab.h
+	rm -rf dagonc lex.yy.c parse.output parse.tab.c parse.tab.h dagonc.dSYM

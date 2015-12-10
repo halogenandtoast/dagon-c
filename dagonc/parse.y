@@ -2,11 +2,12 @@
   #include <stdio.h>
   #include <stdarg.h>
   #include "node.h"
+  #include "env.h"
 
   extern int yylex();
   extern int yylineno;
   extern void fatal_error(const char *msg, ...);
-  void yyerror(const char *error) {
+  void yyerror(DagonEnv* env, const char *error) {
     fatal_error("Parsing error on line %d: %s\n", yylineno, error);
   }
 %}
@@ -38,10 +39,11 @@
 %type<node> value array array_list array_value variable number
 
 %error-verbose
+%parse-param { DagonEnv* env }
 
 %%
 
-program: statements opt_newline { dagon_dump($1); }
+program: statements opt_newline { dagon_run(env, $1); dagon_free_node($1); }
 
 statements: statements NEWLINE statement { dagon_list_node_append($1, $3); }
           | statement { $$ = dagon_list_node_new($1) }

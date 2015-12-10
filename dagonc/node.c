@@ -193,6 +193,144 @@ void dagon_dump_indented(Node* node, int indentation, int inlined) {
   if (!inlined) printf("\n");
 }
 
+void dagon_free_list_node(ListNode* node) {
+  if(node->next) {
+    dagon_free_list_node(node->next);
+  }
+
+  if(node->current) {
+    dagon_free_node(node->current);
+  }
+  free(node);
+}
+
+void dagon_free_node(Node* node) {
+  switch(node->type) {
+    case OBJECT_INITIALIZE_NODE:
+      {
+        ObjectInitializeNode* object_initialize_node = (ObjectInitializeNode*) node->value.ptr;
+        dagon_free_list_node(object_initialize_node->args);
+        free(object_initialize_node);
+        break;
+      }
+    case IF_STATEMENT_NODE:
+      {
+        IfStatementNode* if_statement_node = (IfStatementNode*) node->value.ptr;
+        dagon_free_list_node(if_statement_node->true_statements);
+        dagon_free_list_node(if_statement_node->false_statements);
+        dagon_free_node(if_statement_node->expression);
+        free(if_statement_node);
+        break;
+      }
+    case CASE_NODE:
+      {
+        CaseNode* case_node = (CaseNode*) node->value.ptr;
+        dagon_free_node(case_node->value);
+        dagon_free_list_node(case_node->statements);
+        free(case_node);
+        break;
+      }
+    case CATCHALL_CASE_NODE:
+      {
+        CatchallCaseNode* catchall_case_node = (CatchallCaseNode*) node->value.ptr;
+        dagon_free_list_node(catchall_case_node->statements);
+        free(catchall_case_node);
+        break;
+      }
+    case METHOD_CALL_NODE:
+      {
+        MethodCallNode* method_call_node = (MethodCallNode*) node->value.ptr;
+        dagon_free_node(method_call_node->object);
+        dagon_free_list_node(method_call_node->args);
+        free(method_call_node);
+        break;
+      }
+    case SCOPED_METHOD_CALL_NODE:
+      {
+        ScopedMethodCallNode* scoped_method_call_node = (ScopedMethodCallNode*) node->value.ptr;
+        dagon_free_list_node(scoped_method_call_node->args);
+        free(scoped_method_call_node);
+        break;
+      }
+    case CASE_STATEMENT_NODE:
+      {
+        CaseStatementNode* case_statement_node = (CaseStatementNode*) node->value.ptr;
+        dagon_free_node(case_statement_node->value);
+        dagon_free_list_node(case_statement_node->cases);
+        free(case_statement_node);
+        break;
+      }
+    case WHILE_STATEMENT_NODE:
+      {
+        WhileStatementNode* while_node = (WhileStatementNode*) node->value.ptr;
+        dagon_free_node(while_node->conditional);
+        dagon_free_list_node(while_node->statements);
+        free(while_node);
+        break;
+      }
+    case ARRAY_NODE:
+      {
+        ArrayNode* array_node = (ArrayNode*) node->value.ptr;
+        dagon_free_list_node(array_node->items);
+        free(array_node);
+        break;
+      }
+    case VARIABLE_NODE:
+      {
+        VariableNode* variable_node = (VariableNode*) node->value.ptr;
+        free(variable_node);
+        break;
+      }
+    case INSTANCE_VARIABLE_NODE:
+      {
+        InstanceVariableNode* instance_variable_node = (InstanceVariableNode*) node->value.ptr;
+        free(instance_variable_node);
+        break;
+      }
+    case CONSTANT_NODE:
+      {
+        ConstantNode* constant_node = (ConstantNode*) node->value.ptr;
+        free(constant_node);
+        break;
+      }
+    case ASSIGNMENT_NODE:
+      {
+        AssignmentNode* assignment_node = (AssignmentNode*) node->value.ptr;
+        dagon_free_node(assignment_node->variable);
+        dagon_free_node(assignment_node->value);
+        free(assignment_node);
+        break;
+      }
+    case CLASS_DEFINITION_NODE:
+      {
+        ClassDefinitionNode *class_definition_node = (ClassDefinitionNode*) node->value.ptr;
+        dagon_free_list_node(class_definition_node->methods);
+        free(class_definition_node);
+        break;
+      }
+    case METHOD_DEFINITION_NODE:
+      {
+        MethodDefinitionNode *method_definition_node = (MethodDefinitionNode*) node->value.ptr;
+        dagon_free_list_node(method_definition_node->args);
+        dagon_free_list_node(method_definition_node->statements);
+        free(method_definition_node);
+        break;
+      }
+    case STATEMENTS_NODE:
+      dagon_free_list_node((ListNode*) node->value.ptr);
+      free(node);
+      break;
+    case INT_NODE:
+      free(node);
+      break;
+    case STRING_NODE:
+      free(node);
+      break;
+    default:
+      fatal_error("Can't free unknown node type: %i\n", node->type);
+  }
+}
+
 void dagon_dump_list_node(ListNode* item, int indentation) {
   while(item && item->current) {
     DO_INDENT;

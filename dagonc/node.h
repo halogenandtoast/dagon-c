@@ -1,22 +1,32 @@
-typedef enum node_type {
-  OBJECT_INITIALIZE_NODE,
-  STATEMENTS_NODE,
-  INT_NODE,
-  CLASS_DEFINITION_NODE,
-  METHOD_DEFINITION_NODE,
-  ASSIGNMENT_NODE,
-  VARIABLE_NODE,
-  WHILE_STATEMENT_NODE,
-  CASE_STATEMENT_NODE,
-  IF_STATEMENT_NODE,
-  CONSTANT_NODE,
-  INSTANCE_VARIABLE_NODE,
-  METHOD_CALL_NODE,
-  SCOPED_METHOD_CALL_NODE,
-  CASE_NODE,
-  CATCHALL_CASE_NODE,
-  STRING_NODE,
-  ARRAY_NODE
+#ifndef _DAGON_NODE_
+#define _DAGON_NODE_
+
+#define FOREACH_NODE(NODE) \
+  NODE(OBJECT_INITIALIZE_NODE) \
+  NODE(STATEMENTS_NODE) \
+  NODE(INT_NODE) \
+  NODE(CLASS_DEFINITION_NODE) \
+  NODE(METHOD_DEFINITION_NODE) \
+  NODE(ASSIGNMENT_NODE) \
+  NODE(VARIABLE_NODE) \
+  NODE(WHILE_STATEMENT_NODE) \
+  NODE(CASE_STATEMENT_NODE) \
+  NODE(IF_STATEMENT_NODE) \
+  NODE(CONSTANT_NODE) \
+  NODE(INSTANCE_VARIABLE_NODE) \
+  NODE(METHOD_CALL_NODE) \
+  NODE(SCOPED_METHOD_CALL_NODE) \
+  NODE(CASE_NODE) \
+  NODE(CATCHALL_CASE_NODE) \
+  NODE(STRING_NODE) \
+  NODE(ARRAY_NODE) \
+  NODE(NATIVE_NODE)
+
+#define GENERATE_ENUM(ENUM) ENUM,
+#define GENERATE_STRING(STRING) #STRING,
+
+typedef enum {
+  FOREACH_NODE(GENERATE_ENUM)
 } node_type;
 
 typedef struct {
@@ -107,7 +117,8 @@ typedef struct {
 } ObjectInitializeNode;
 
 void dagon_dump(Node* node);
-// void dagon_dump_list_node(ListNode* list);
+void dagon_free_node(Node* node);
+
 void dagon_list_node_append(Node* list, Node* item);
 Node* dagon_list_node_new(Node* item);
 Node* dagon_int_node_new(int val);
@@ -128,3 +139,5 @@ Node* dagon_case_node_new(Node* value, Node* statements);
 Node* dagon_catchall_case_node_new(Node* statements);
 Node* dagon_string_node_new(const char *name);
 Node* dagon_object_initialize_node_new(const char *name, Node* args);
+
+#endif
