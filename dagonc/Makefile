@@ -1,6 +1,6 @@
 all: dagonc
 
-dagonc: main.c lex.yy.c parse.tab.c node.c env.c
+dagonc: main.c lex.yy.c parse.tab.c node.c env.c string.c integer.c array.c io.c object.c
 	cc -ggdb -o $@ $^
 
 lex.yy.c: lex.l parse.tab.h
