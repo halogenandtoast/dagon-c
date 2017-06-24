@@ -3,6 +3,7 @@
   #include <stdlib.h>
   #include <stdarg.h>
   #include "node.h"
+  #include "dagon.h"
   #include "parse.tab.h"
 
   static int current_indent = 0;
