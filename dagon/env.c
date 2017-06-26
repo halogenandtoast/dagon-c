@@ -142,7 +142,7 @@ void dagon_class_add_c_method(DagonEnv* env, VALUE klass, const char* name, void
   dagon_class_add_method(env, klass, method);
 }
 
-DagonEnv* dagon_env_new() {
+DagonEnv* dagon_env_new(int argc, char* argv[]) {
   DagonEnv* env = malloc(sizeof(DagonEnv));
   env->stack = dagon_stack_new();
   env->constants = dagon_list_new();
@@ -169,6 +169,17 @@ DagonEnv* dagon_env_new() {
   dg_stdout->header.klass = dg_cIO;
   dg_stdout->file = fdopen(fcntl(STDOUT_FILENO, F_DUPFD, 0), "w");
   dagon_const_set(env, "STDOUT", (DagonObject*) dg_stdout);
+
+  DagonArray* dargv = (DagonArray*) dagon_array_new(env);
+  DagonListNode* current = dargv->head;
+  for(int i = 0; i < argc; i++) {
+    current->current.value = dagon_string_new(env, argv[i]);
+    dargv->len++;
+    current->next = malloc(sizeof(DagonListNode));
+    current = current->next;
+  }
+
+  dagon_const_set(env, "ARGV", (DagonObject*) dargv);
 
   return env;
 }
@@ -480,8 +491,6 @@ VALUE dagon_run(DagonEnv* env, Node* node) {
         ListNode* items = array_node->items;
         int length = dagon_list_node_length(items);
         DagonArray* array = (DagonArray*) dagon_array_new(env);
-        array->header.klass = dagon_class_lookup(env, "Array");
-        array->head = malloc(sizeof(DagonListNode));
         DagonListNode* current = array->head;
         while(items && items->current) {
           current->current.value = dagon_run(env, items->current);

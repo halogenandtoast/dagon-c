@@ -1,0 +1,14 @@
+describe(descriptor, descriptions):
+  puts(descriptor)
+  descriptions.call()
+  puts("")
+
+it(description, block):
+  success: block.call()
+  if success
+    print("\e[32m")
+  else
+    print("\e[31m")
+  print("- ")
+  print(description)
+  puts("\e[0m")

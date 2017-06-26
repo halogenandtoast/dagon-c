@@ -23,6 +23,10 @@ VALUE dagon_object_gets(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return dagon_send(env, dg_stdin, "gets", 0, NULL);
 }
 
+VALUE dagon_object_require(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  return (VALUE) 0;
+}
+
 void Init_Object(DagonEnv* env) {
   dg_cObject = (VALUE) malloc(sizeof(DagonClass));
   ((DagonClass*) dg_cObject)->name = "Object";
@@ -32,5 +36,5 @@ void Init_Object(DagonEnv* env) {
   dagon_class_add_c_method(env, dg_cObject, "print", dagon_object_print);
   dagon_class_add_c_method(env, dg_cObject, "puts", dagon_object_puts);
   dagon_class_add_c_method(env, dg_cObject, "gets", dagon_object_gets);
-
+  dagon_class_add_c_method(env, dg_cObject, "require", dagon_object_require);
 }

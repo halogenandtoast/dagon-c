@@ -1,8 +1,15 @@
-all: dagonc
+SHELL := /bin/bash
+PATH := bin:dagon:$(PATH)
 
-.PHONY: dagonc
-dagonc:
+all: dagon
+
+.PHONY: dagon
+dagon:
 	$(MAKE) -C $@
 
+test:
+	./bin/dspec
+
+
 clean:
-	cd dagonc && $(MAKE) clean
+	cd dagon && $(MAKE) clean

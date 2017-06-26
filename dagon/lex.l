@@ -36,9 +36,13 @@
 %s start
 %x indent
 %x string
+%x comment
 %s dstring
 
 %%
+
+<comment>"\n" { BEGIN INITIAL; }
+<comment>.
 
 <string>"#{" { BEGIN dstring; return DSTRING_BEGIN; }
 <string>([^"#]|\\.)* { yylval.sval = strdup(yytext); return STRING_PART; }
@@ -63,16 +67,18 @@
   }
 }
 
+"#" { BEGIN comment; }
 "while " { return WHILE; }
 "case " { return CASE; }
 "if " { return IF; }
 "else" { return ELSE; }
 "\n"+ { line_indent = 0; BEGIN indent; return NEWLINE; }
 [0-9]+ { yylval.ival = atoi(yytext); return DIGIT; }
-([A-Z][a-z]+)+ { yylval.sval = strdup(yytext); return CLASS; }
+([A-Z][A-Z]*[a-z]+)+ { yylval.sval = strdup(yytext); return CLASS; }
 [A-Z][A-Z]+ { yylval.sval = strdup(yytext); return CONSTANT; }
-[a-z]+[a-z-]* { yylval.sval = strdup(yytext); return ID; }
+[a-z]+[a-z-]*\?? { yylval.sval = strdup(yytext); return ID; }
 "\"" { BEGIN string; }
+"->" { return ARROW; }
 "." { return DOT; }
 ": " { return ASSIGN; }
 ":" { return COLON; }

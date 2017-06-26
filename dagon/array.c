@@ -92,6 +92,24 @@ VALUE dagon_array_pop(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return return_value;
 }
 
+VALUE dagon_array_drop(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  DagonArray *array = (DagonArray*) self;
+  DagonListNode* current = array->head;
+  int count = FIX2INT(values[0]);
+  while(count > 0 && current != NULL) {
+    current = current->next;
+    count--;
+  }
+
+  VALUE ret = dagon_array_new(env);
+
+  if(current) {
+    ((DagonArray*) ret)->head = current;
+  }
+
+  return ret;
+}
+
 void Init_Array(DagonEnv* env) {
   VALUE array = dagon_class_new("Array", dg_cObject);
   dagon_class_set(env, "Array", array);
@@ -102,4 +120,5 @@ void Init_Array(DagonEnv* env) {
   dagon_class_add_c_method(env, array, "pop", dagon_array_pop);
   dagon_class_add_c_method(env, array, "last", dagon_array_last);
   dagon_class_add_c_method(env, array, "to-s", dagon_array_to_s);
+  dagon_class_add_c_method(env, array, "drop", dagon_array_drop);
 }

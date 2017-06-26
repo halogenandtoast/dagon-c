@@ -23,7 +23,7 @@ void Init_Integer(DagonEnv *env);
 void Init_Array(DagonEnv *env);
 void Init_IO(DagonEnv *env);
 
-DagonEnv* dagon_env_new();
+DagonEnv* dagon_env_new(int argc, char* argv[]);
 void dagon_env_destroy(DagonEnv* env);
 VALUE dagon_run(DagonEnv* env, Node* node);
 

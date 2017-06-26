@@ -5,6 +5,7 @@
   #include "node.h"
   #include "dagon.h"
   #include "env.h"
+  #define YYDEBUG 1
 
   extern int yylex();
   extern int yylineno;
@@ -26,7 +27,7 @@
   Node* node;
 }
 
-%token PLUS INDENT DEDENT COLON NEWLINE
+%token PLUS INDENT DEDENT COLON NEWLINE ARROW
 %token DOT LPAREN RPAREN LBRACE
 %token RBRACE AT MULT MINUS LT EQL NOP COMMA ASSIGN
 %token WHILE CASE ARRAY_ASSIGN IF ELSE NEGATE
@@ -47,9 +48,9 @@
 
 %%
 
-program: statements opt_newline { dagon_run(env, $1); dagon_free_node($1); }
+program: opt_newlines statements opt_newlines { dagon_run(env, $2); dagon_free_node($2); }
 
-statements: statements NEWLINE statement { dagon_list_node_append($1, $3); }
+statements: statements NEWLINE opt_newlines statement { dagon_list_node_append($1, $4); }
           | statement { $$ = dagon_list_node_new($1); }
 
 statement: expression
@@ -153,5 +154,5 @@ number: DIGIT { $$ = dagon_int_node_new($1); }
 
 block: NEWLINE INDENT statements NEWLINE DEDENT { $$ = $3; }
 
-opt_newline: /* No Newline */
-           | NEWLINE
+opt_newlines: /* No Newline */
+            | opt_newlines NEWLINE

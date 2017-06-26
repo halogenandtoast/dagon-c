@@ -1,0 +1,31 @@
+#!/usr/bin/env dagon
+
+# # dagon spec
+#
+# dspec
+# dspec some_spec.dg
+#
+# The dspec utility will load files and run them, printing passing
+# specifications in green and failing specifications in red.
+#
+# With no arguments, dspec attempts to load specs which match the
+# "spec/*_spec.dg" glob.
+#
+# If arguments are provided, dspec loads the specified files and attempts to run
+# them as specs.
+
+require("spec/dspec")
+require("spec/assertions")
+
+DSpecRunner:
+  init(args):
+    if args.empty?
+      @spec-files: Dir("spec").glob("*_spec.dg")
+    else
+      @spec-files: args
+
+  run-tests:
+    @spec-files.map(load)
+
+runner: DSpecRunner(ARGV.drop(1))
+runner.run-tests()

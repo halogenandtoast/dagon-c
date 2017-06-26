@@ -104,6 +104,11 @@ typedef struct {
 } ScopedMethodCallNode;
 
 typedef struct {
+  ListNode* args;
+  ListNode* statements;
+} LambdaNode;
+
+typedef struct {
   Node* value;
   ListNode* statements;
 } CaseNode;
