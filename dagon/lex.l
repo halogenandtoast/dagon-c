@@ -9,6 +9,8 @@
   static int current_indent = 0;
   static int line_indent = 0;
   static int override = 0;
+  static int newline = 0;
+  static int newline_comment = 0;
 
   void fatal_error(const char *fmt, ...) {
     va_list args;
@@ -49,9 +51,11 @@
 <string>"\"" { BEGIN INITIAL; }
 <dstring>"}" { BEGIN string; return DSTRING_END; }
 
-<indent>"\n"+ { if(!override) line_indent = 0; override = 0; return NEWLINE; }
+<indent>"\n"+ { if(!override) line_indent = 0; override = 0; if(newline == 0) { newline = 1; return NEWLINE; } }
 <indent>"  " {  line_indent++; }
 <indent>. {
+  newline = 0;
+  newline_comment = 1;
   unput(*yytext);
   if (line_indent > current_indent) {
     current_indent++;
@@ -67,12 +71,12 @@
   }
 }
 
-"#" { BEGIN comment; }
+"#" { if (newline_comment == 1) { newline = 1; newline_comment = 0; }; BEGIN comment; }
 "while " { return WHILE; }
 "case " { return CASE; }
 "if " { return IF; }
 "else" { return ELSE; }
-"\n"+ { line_indent = 0; BEGIN indent; return NEWLINE; }
+"\n"+ { line_indent = 0; BEGIN indent; if(newline == 0) { newline = 1; return NEWLINE; } }
 [0-9]+ { yylval.ival = atoi(yytext); return DIGIT; }
 ([A-Z][A-Z]*[a-z]+)+ { yylval.sval = strdup(yytext); return CLASS; }
 [A-Z][A-Z]+ { yylval.sval = strdup(yytext); return CONSTANT; }

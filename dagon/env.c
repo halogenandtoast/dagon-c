@@ -154,6 +154,7 @@ DagonEnv* dagon_env_new(int argc, char* argv[]) {
   Init_Integer(env);
   Init_Array(env);
   Init_IO(env);
+  Init_Dir(env);
 
   VALUE main_object = dagon_object_alloc(dg_cObject);
   DagonScope* scope = dagon_scope_new(env);

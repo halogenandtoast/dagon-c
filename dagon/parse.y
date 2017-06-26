@@ -48,9 +48,9 @@
 
 %%
 
-program: opt_newlines statements opt_newlines { dagon_run(env, $2); dagon_free_node($2); }
+program: opt_newline statements opt_newline { dagon_run(env, $2); dagon_free_node($2); }
 
-statements: statements NEWLINE opt_newlines statement { dagon_list_node_append($1, $4); }
+statements: statements NEWLINE statement { dagon_list_node_append($1, $3); }
           | statement { $$ = dagon_list_node_new($1); }
 
 statement: expression
@@ -154,5 +154,5 @@ number: DIGIT { $$ = dagon_int_node_new($1); }
 
 block: NEWLINE INDENT statements NEWLINE DEDENT { $$ = $3; }
 
-opt_newlines: /* No Newline */
-            | opt_newlines NEWLINE
+opt_newline: /* No Newline */
+           | NEWLINE

@@ -1,4 +1,5 @@
 #include "dagon.h"
+#include "env.h"
 #include <stdlib.h>
 
 VALUE dagon_object_alloc(VALUE klass) {
@@ -23,6 +24,12 @@ VALUE dagon_object_gets(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return dagon_send(env, dg_stdin, "gets", 0, NULL);
 }
 
+VALUE dagon_object_ivar_set(DagonEnv *env, VALUE self, const char* name, VALUE value) {
+  DagonObject* obj = (DagonObject*) self;
+  dagon_list_append(obj->header.ivars, "root", value);
+  return value;
+}
+
 VALUE dagon_object_require(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return (VALUE) 0;
 }
@@ -37,4 +44,5 @@ void Init_Object(DagonEnv* env) {
   dagon_class_add_c_method(env, dg_cObject, "puts", dagon_object_puts);
   dagon_class_add_c_method(env, dg_cObject, "gets", dagon_object_gets);
   dagon_class_add_c_method(env, dg_cObject, "require", dagon_object_require);
+  dagon_class_add_c_method(env, dg_cObject, "load", dagon_object_require);
 }

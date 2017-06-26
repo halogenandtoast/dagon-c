@@ -110,5 +110,7 @@ void dagon_class_set(DagonEnv* env, const char *name, VALUE klass);
 void dagon_class_add_c_method(DagonEnv* env, VALUE klass, const char* name, void* c_func);
 VALUE dagon_send(DagonEnv *env, VALUE value, const char *method_name, int argc, VALUE* values);
 DagonList* dagon_list_new();
+VALUE dagon_object_ivar_set(DagonEnv *env, VALUE self, const char* name, VALUE value);
+void dagon_list_append(DagonList* list, const char* name, VALUE value);
 
 #endif

@@ -92,6 +92,11 @@ VALUE dagon_array_pop(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   return return_value;
 }
 
+VALUE dagon_array_is_empty(DagonEnv *env, VALUE self, int argc, VALUE* values) {
+  DagonArray *array = (DagonArray*) self;
+  return array->len == 0;
+}
+
 VALUE dagon_array_drop(DagonEnv *env, VALUE self, int argc, VALUE* values) {
   DagonArray *array = (DagonArray*) self;
   DagonListNode* current = array->head;
@@ -121,4 +126,5 @@ void Init_Array(DagonEnv* env) {
   dagon_class_add_c_method(env, array, "last", dagon_array_last);
   dagon_class_add_c_method(env, array, "to-s", dagon_array_to_s);
   dagon_class_add_c_method(env, array, "drop", dagon_array_drop);
+  dagon_class_add_c_method(env, array, "empty?", dagon_array_is_empty);
 }

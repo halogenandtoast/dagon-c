@@ -19,6 +19,7 @@ DagonMethod* dagon_method_lookup(DagonEnv* env, VALUE klass, const char *method)
 
 void Init_Object(DagonEnv *env);
 void Init_String(DagonEnv *env);
+void Init_Dir(DagonEnv *env);
 void Init_Integer(DagonEnv *env);
 void Init_Array(DagonEnv *env);
 void Init_IO(DagonEnv *env);
